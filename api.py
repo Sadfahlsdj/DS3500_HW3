@@ -39,6 +39,9 @@ class API():
             rated: one of ['rated', 'unrated', 'all']
                 determines whether rated/unrated/all games are considered for the graph
                 gotten through selector widget on the webapp
+        Returns:
+            portion of instance variable dataframe with x_column and y_column
+                as well as rated column if it isn't x_column or y_column
         """
         df = self.df
 
@@ -59,17 +62,21 @@ class API():
         return df
 
     def extract_full_df(self):
-        df = self.df[1:]
+        """
+        returns:
+            instance variable dataframe, excluding the index column
+        """
+        df = self.df.drop(self.df.columns[0], axis=1)
+        # exclude first column since it is the index column
         return df
 
-
-
+# main function used for testing, can be safely ignored
 def main():
     api = API()
     api.load_df('games_clean.csv')
 
     a = api.get_columns()
-    b = api.extract_two_var_df('increment_code', 'white_rating', rated='unrated')
+    b = api.extract_two_var_df('time_control', 'white_rating', rated='unrated')
     c = api.column_datatypes()
 
     # print(b.head().to_string())

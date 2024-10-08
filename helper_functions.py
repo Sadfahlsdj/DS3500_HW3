@@ -69,14 +69,17 @@ def create_sankey(input_df, src, targ, vals, *cols, **kwargs):
 
     # aggregate_columns is always called on the input df
     # it has no effect if input_df only has two non-value columns (only source and target)
-    if len(cols) > 0:
-        column_list = [src, targ] + [c for c in cols][0] + [vals]
 
-        # this is so that aggregate_columns only runs on the columns provided in the df
-        df_to_use = input_df[column_list]
-        # aggregate_columns will take in the src and targ column names
-        # so that the df it outputs will have similar column names to the input df
-        input_df = aggregate_columns(df_to_use, src, targ, vals)
+    column_list = [src, targ, vals]
+
+    if len(cols) > 0:
+        column_list += [c for c in cols][0]
+
+    # this is so that aggregate_columns only runs on the columns provided in the df
+    df_to_use = input_df[column_list]
+    # aggregate_columns will take in the src and targ column names
+    # so that the df it outputs will have similar column names to the input df
+    input_df = aggregate_columns(df_to_use, src, targ, vals)
 
     input_dict = {}
     for index, row in input_df.iterrows():

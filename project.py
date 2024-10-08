@@ -32,8 +32,14 @@ width = pn.widgets.IntSlider(name="Width", start=250, end=2000, step=250, value=
 height = pn.widgets.IntSlider(name="Height", start=200, end=2500, step=100, value=800)
 
 # CALLBACK FUNCTIONS
-
 def get_catalog(x_column, y_column, rated):
+    """
+    :param x_column: name of x column gotten from widget
+    :param y_column: name of y column gotten from widget
+    :param rated: one of ['all', 'rated', 'unrated'] that determines whether to consider rated/unrated games only
+    :return: dataframe with x_column and y_column
+        depending on value of "rated" will include rated/unrated/all games
+    """
     if x_column == y_column:
         return('column names cannot be the same') # if column names are the same, it errors out
     global local
@@ -44,6 +50,9 @@ def get_catalog(x_column, y_column, rated):
     return table
 
 def get_full_df():
+    """
+    calls extract_full_df(), displays whole dataframe
+    """
     global local
     local = api.extract_full_df()
     table = pn.widgets.Tabulator(local, selectable=False)
@@ -51,7 +60,6 @@ def get_full_df():
 
 def get_plot(x_column, y_column, rated, width, height):
     """
-
     :param x_column: name of x column gotten from widget
     :param y_column: name of y column gotten from widget
     :param rated: one of ['all', 'rated', 'unrated'] that determines whether to consider rated/unrated games only
@@ -91,6 +99,9 @@ def get_plot(x_column, y_column, rated, width, height):
         local['vals'] = values # add to dataframe
 
         # run helper function to create sankey
+        # each pair of values will be assigned a value of 1
+        # aggregate_columns will be called within create_sankey to combine values
+        # if the src and targ columns have the same value
         fig = create_sankey(local, x_column, y_column, vals='vals', width=width, height=height)
         return fig
 
