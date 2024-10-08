@@ -27,6 +27,7 @@ y_column = pn.widgets.Select(name="Y Column", options=api.get_columns(), value='
 rated = pn.widgets.Select(name="Rated/Unrated Games", options=['all', 'rated', 'unrated'],
                           value='all')
 
+# width/height of plots
 width = pn.widgets.IntSlider(name="Width", start=250, end=2000, step=250, value=1000)
 height = pn.widgets.IntSlider(name="Height", start=200, end=2500, step=100, value=800)
 
@@ -34,9 +35,17 @@ height = pn.widgets.IntSlider(name="Height", start=200, end=2500, step=100, valu
 
 def get_catalog(x_column, y_column, rated):
     if x_column == y_column:
-        return('column names cannot be the same')
+        return('column names cannot be the same') # if column names are the same, it errors out
     global local
-    local = api.extract_local_network(x_column, y_column, rated)  # calling the api
+    local = api.extract_two_var_df(x_column, y_column, rated)  # calling the api
+
+    # creates Tabulator widget from df with the 2 input columns, and rated column if it is not included
+    table = pn.widgets.Tabulator(local, selectable=False)
+    return table
+
+def get_full_df():
+    global local
+    local = api.extract_full_df()
     table = pn.widgets.Tabulator(local, selectable=False)
     return table
 
@@ -59,7 +68,7 @@ def get_plot(x_column, y_column, rated, width, height):
         return('column names cannot be the same')
 
     global local
-    local = api.extract_local_network(x_column, y_column, rated)  # calling the api
+    local = api.extract_two_var_df(x_column, y_column, rated)  # calling the api
 
     datatypes = api.column_datatypes()
     x_dtype, y_dtype = datatypes[x_column], datatypes[y_column]
@@ -69,28 +78,33 @@ def get_plot(x_column, y_column, rated, width, height):
         plot = px.scatter(local, x_column, y_column, color='rated', height=height, width=width)
         return plot
     elif '64' in str(y_dtype):
+        # y variable is numeric, x variable is categorical
         plot = px.box(local, x=x_column, y=y_column, height=height, width=width)
         return plot
     elif '64' in str(x_dtype):
+        # x variable is numeric, y variable is categorical
         plot = px.box(local, x=x_column, y=y_column, orientation='h', height=height, width=width)
         return plot
     else:
-        # if rated = 'all' this graph does not differentiate whatsoever
-        values = [1] * len(local[x_column]) # create values column
+        # both variables are categorical
+        values = [1] * len(local[x_column]) # create values column for sankey
         local['vals'] = values # add to dataframe
 
-        # run helper function
+        # run helper function to create sankey
         fig = create_sankey(local, x_column, y_column, vals='vals', width=width, height=height)
         return fig
 
 
 # CALLBACK BINDINGS (Connecting widgets to callback functions)
-catalog = pn.bind(get_catalog, x_column, y_column, rated)
+two_var_catalog = pn.bind(get_catalog, x_column, y_column, rated)
 plot = pn.bind(get_plot, x_column, y_column, rated, width, height)
 
-# DASHBOARD WIDGET CONTAINERS ("CARDS")
+# just assigning a variable to get_full_df()
+# binding not needed since it does not have any inputs
+full_catalog = get_full_df()
 
-card_width = 320
+# DASHBOARD WIDGET CONTAINERS ("CARDS")
+card_width = 320 # value chosen for my own device, mileage may vary
 
 search_card = pn.Card(
     pn.Column(
@@ -119,9 +133,10 @@ layout = pn.template.FastListTemplate(
     theme_toggle=False,
     main=[
         pn.Tabs(
-            ("Table", catalog),
+            ("Two Variable Table", two_var_catalog),
             ('Graph', plot),
-            active=0
+            ('Full Table', full_catalog),
+            active=1
         )
 
     ],
